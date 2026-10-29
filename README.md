@@ -17,10 +17,30 @@ python agent.py --demo agent        # the loop until the model answers
 python agent.py --demo ticket       # adds the create_ticket tool, prints the ticket JSON
 python agent.py --demo reasoning    # reasoning effort high, reasoning items shown
 python agent.py --demo compare --models mistral-large-4,mistral-small-latest \
-    --price mistral-large-4=IN,OUT --price mistral-small-latest=IN,OUT
+    --price mistral-large-4=IN,OUT --price mistral-small-latest=IN,OUT --runs 3
 ```
 
-Prices are per million tokens; take them from https://mistral.ai/pricing on the day. Nothing is hard-coded.
+Prices are per million tokens; take them from each model's page on docs.mistral.ai on the day. Nothing is hard-coded.
+With `--runs N` each model runs N times and the table shows the median. An API error (for example a 429 on a
+capacity-limited preview model) is printed in the row instead of stopping the run.
+
+## Third-party models and long context
+
+```bash
+# which endpoints list a model: global (no location commitment), EU, US
+python agent.py --demo regions --models zai-glm-5-3-flash,deepseek-v4-1-flash-1017
+
+# same agent on any endpoint
+python agent.py --demo agent --model zai-glm-5-3-flash --server eu
+
+# long context: a fake one-night log with three planted root causes
+python make_log.py                                   # writes logs/incident.log (fixed seed)
+python agent.py --demo longctx --model deepseek-v4-1-flash-1017
+```
+
+`longctx` counts the input tokens, asks for the three independent root causes, and prints which of the
+planted causes (DB pool, full disk, expired TLS certificate) the answer names. The log is invented:
+example.com hosts, made-up services, one harmless red-herring warning.
 
 ## What the loop does
 
