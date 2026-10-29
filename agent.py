@@ -259,15 +259,20 @@ def demo_longctx(cl, model, path="logs/incident.log"):
     n = cl.responses.count_input_tokens(model=model, input=history)
     print(f"input: {n.model_dump().get('input_tokens', n)} tokens")
     t0 = time.perf_counter()
-    r = cl.responses.create(model=model, input=history, max_output_tokens=4096)
+    # 16k output: Large 4 reasons by default and spent all of 4096 before answering (checked 2026-10-29)
+    r = cl.responses.create(model=model, input=history, max_output_tokens=16384)
     secs = time.perf_counter() - t0
     answer = message_text(r)
     print(answer)
+    if r.status != "completed":
+        print(f"status: {r.status} ({r.incomplete_details})")
     low = answer.lower()
     hits = [name for name, words in ROOT_CAUSES.items() if any(w in low for w in words)]
     print(f"[{model}: {secs:.1f}s, found {len(hits)}/3: {', '.join(hits) or 'none'}]")
     if r.usage:
-        print(f"[tokens in {r.usage.input_tokens}, out {r.usage.output_tokens}]")
+        details = r.usage.output_tokens_details
+        print(f"[tokens in {r.usage.input_tokens}, out {r.usage.output_tokens}, reasoning "
+              f"{details.reasoning_tokens if details else 'not reported'}]")
 
 
 def demo_count(cl, model):
